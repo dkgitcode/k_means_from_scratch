@@ -4,7 +4,6 @@ A K-means clustering classifier built from scratch (no numpy or sk).
 ## Theory
 K-means clustering is an unsupervised machine learning algorithm that groups data points into k clusters based on euclidean distance. The algorithm works by placing "magnets" (centroids) in euclidean space and assigning each data point to the nearest magnet. The algorithm then moves the magnets to the center of their assigned data by simply averaging the data points. This process is repeated until the magnets no longer move.
 
-
 ## Fitting the data
 
 ```python
