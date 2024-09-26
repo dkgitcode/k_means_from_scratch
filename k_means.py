@@ -45,81 +45,38 @@ class K_Means_Classifier:
             clusters[best_cluster].append(i)
         return clusters
     
-    def fit(self, X):
+    def fit(self, X, k=None):
         m = len(X)
-        centroid_indices = random.sample(range(m), self.k) # fix
+        self.k = k if k else self.k
+        centroid_indices = random.sample(range(m), self.k)
         self.centroids = [X[i] for i in centroid_indices]
+
         clusters = [[i] for i in centroid_indices]
 
         for _ in range(self.max_iterations):
             old_centroids = self.centroids.copy()
-            
-            # Assign clusters
             clusters = self.assign_clusters(X)
-            
-            # Update centroids
             self.centroids = self.get_centroids(X, clusters)
-            
-            # Check for convergence
+
             if all(old == new for old, new in zip(old_centroids, self.centroids)):
                 break
 
-        return clusters
-    
-    def find_elbow(self, ssd_values, k_values):
-        """Find the elbow (maximum curvature) in the SSD plot using the distance from line method."""
-        # Get the first and last points
-        p1 = (k_values[0], ssd_values[0])
-        p2 = (k_values[-1], ssd_values[-1])
-        
-        # Find the distances from each point to the line (p1 to p2)
-        distances = []
-        for i in range(len(k_values)):
-            # Calculate the perpendicular distance from each point to the line
-            x0, y0 = k_values[i], ssd_values[i]
-            numerator = abs((p2[1] - p1[1]) * x0 - (p2[0] - p1[0]) * y0 + p2[0] * p1[1] - p2[1] * p1[0])
-            denominator = math.sqrt((p2[1] - p1[1]) ** 2 + (p2[0] - p1[0]) ** 2)
-            distances.append(numerator / denominator)
-        
-        # The index with the maximum distance is the elbow
-        max_distance_index = distances.index(max(distances))
-        optimal_k = k_values[max_distance_index]
-        return optimal_k
-
-    def calculate_second_derivative(self, y):
-        """Calculate the second derivative of y using pure Python."""
-        first_derivative = [y[i+1] - y[i] for i in range(len(y) - 1)]
-        second_derivative = [first_derivative[i+1] - first_derivative[i] for i in range(len(first_derivative) - 1)]
-        return second_derivative
+        return clusters, self.centroids
 
     def argmax(self, x):
         """Find the index of the maximum value in a list."""
         return max(range(len(x)), key=lambda i: x[i])
 
-    def find_elbow_second_derivative(self, wcss_values, k_values):
-        """Find the elbow using the second derivative method."""
-        second_derivative = self.calculate_second_derivative(wcss_values)
-        
-        # The elbow is typically where the second derivative is maximum
-        elbow_index = self.argmax(second_derivative) + 2  # +2 because of two derivative operations
-        optimal_k = k_values[elbow_index]
-        
-        return optimal_k
-
-    def fit_with_elbow(self, X, max_k=10):
+    def plot_elbow(self, X, max_k=10):
         wcss_values = []
         k_values = list(range(1, max_k + 1))
         
-        # Run K-means for each value of k and store WCSS
-        possible_clusters = []
         for k in k_values:
             self.k = k  # Update k
-            clusters = self.fit(X)
+            clusters, _ = self.fit(X)
             wcss = self.get_wcss(X, clusters)
             wcss_values.append(wcss)
-            possible_clusters.append(clusters)
         
-        # Plot the elbow graph
         plt.figure(figsize=(10, 5))
         plt.subplot(1, 2, 1)
         plt.plot(k_values, wcss_values, marker='o')
@@ -127,22 +84,5 @@ class K_Means_Classifier:
         plt.ylabel('WCSS')
         plt.title('Elbow Method')
         
-        # Calculate and plot second derivative
-        second_derivative = self.calculate_second_derivative(wcss_values)
-        plt.subplot(1, 2, 2)
-        plt.plot(k_values[2:], second_derivative, marker='o')
-        plt.xlabel('Number of clusters (k)')
-        plt.ylabel('Second Derivative of WCSS')
-        plt.title('Second Derivative Method')
         
-        plt.tight_layout()
-        plt.show()
-        
-        # Automatically find the elbow point using the second derivative method
-        optimal_k = self.find_elbow_second_derivative(wcss_values, k_values)
-        print(f"Optimal number of clusters (k) found: {optimal_k}")
-        optimal_cluster = possible_clusters[optimal_k-1]
-        
-        # Return the optimal clusters
-        return optimal_cluster
             
